@@ -4,7 +4,7 @@ venv/
 env/
 ENV/
 
-# Python
+# Python caching
 __pycache__/
 *.py[cod]
 *$py.class
@@ -41,15 +41,14 @@ wheels/
 .DS_Store
 Thumbs.db
 
-# Environment files
-.env
-.env.local
-
-# Large Data (Moved to Drive/External)
+# Large Feature Backup
 Images_features.pkl
-filenames.pkl
-data/
-images/
 
-# Streamlit
+# Keep the Lite Version Data
+# We want these in Git for a fast demo deployment
+!data/features.pkl
+!data/filenames.pkl
+!images/*.jpg
+
+# Streamlit config
 .streamlit/

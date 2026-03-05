@@ -9,29 +9,25 @@ from sklearn.neighbors import NearestNeighbors
 from numpy.linalg import norm
 from PIL import Image
 import os
-import io
 import time
-import zipfile
-import gdown
 
 # ─────────────────────────────────────────────
 #  PAGE CONFIG
 # ─────────────────────────────────────────────
 st.set_page_config(
-    page_title="FashionLens · AI Style Finder",
+    page_title="FashionLens · AI Style Finder (Lite)",
     page_icon="👗",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ─────────────────────────────────────────────
-#  CUSTOM CSS — Dark editorial aesthetic
+#  CUSTOM CSS
 # ─────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap');
 
-/* ── Root variables ── */
 :root {
     --bg:        #0a0a0a;
     --surface:   #111111;
@@ -41,10 +37,8 @@ st.markdown("""
     --accent2:   #e8c99e;
     --text:      #f0ece4;
     --muted:     #666;
-    --danger:    #e05c5c;
 }
 
-/* ── Global ── */
 html, body, [class*="css"] {
     font-family: 'DM Sans', sans-serif;
     background-color: var(--bg);
@@ -52,19 +46,14 @@ html, body, [class*="css"] {
 }
 
 .stApp { background-color: var(--bg); }
-
-/* ── Hide default Streamlit chrome ── */
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding-top: 2rem; padding-bottom: 3rem; }
 
-/* ── Sidebar ── */
 [data-testid="stSidebar"] {
     background-color: var(--surface);
     border-right: 1px solid var(--border);
 }
-[data-testid="stSidebar"] * { color: var(--text) !important; }
 
-/* ── Hero header ── */
 .hero {
     text-align: center;
     padding: 3rem 1rem 2rem;
@@ -90,15 +79,7 @@ html, body, [class*="css"] {
     color: var(--muted);
     margin-top: 0.5rem;
 }
-.hero-rule {
-    width: 48px;
-    height: 2px;
-    background: var(--accent);
-    margin: 1.2rem auto 0;
-    border: none;
-}
 
-/* ── Section labels ── */
 .section-label {
     font-family: 'DM Sans', sans-serif;
     font-size: 0.72rem;
@@ -109,68 +90,6 @@ html, body, [class*="css"] {
     display: block;
 }
 
-/* ── Upload zone ── */
-.upload-zone {
-    border: 1.5px dashed var(--border);
-    border-radius: 12px;
-    padding: 2.5rem 1.5rem;
-    text-align: center;
-    background: var(--surface2);
-    transition: border-color 0.3s;
-}
-.upload-zone:hover { border-color: var(--accent); }
-
-/* ── Query image container ── */
-.query-frame {
-    position: relative;
-    border: 2px solid var(--accent);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 0 40px rgba(200,169,110,0.15);
-}
-.query-label {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    background: linear-gradient(transparent, rgba(0,0,0,0.85));
-    color: var(--accent);
-    font-size: 0.7rem;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    text-align: center;
-    padding: 1rem 0 0.5rem;
-}
-
-/* ── Result cards ── */
-.rec-card {
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    background: var(--surface);
-    transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
-    cursor: pointer;
-}
-.rec-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--accent);
-    box-shadow: 0 8px 32px rgba(200,169,110,0.12);
-}
-.rec-rank {
-    font-family: 'Playfair Display', serif;
-    font-size: 0.7rem;
-    letter-spacing: 0.3em;
-    color: var(--muted);
-    text-align: center;
-    padding: 0.5rem 0 0.3rem;
-}
-.rec-score {
-    font-size: 0.75rem;
-    color: var(--accent);
-    text-align: center;
-    padding: 0.2rem 0 0.6rem;
-    font-weight: 500;
-}
-
-/* ── Stats bar ── */
 .stats-bar {
     display: flex;
     gap: 2rem;
@@ -194,7 +113,6 @@ html, body, [class*="css"] {
     color: var(--muted);
 }
 
-/* ── Buttons ── */
 .stButton > button {
     background: linear-gradient(135deg, var(--accent), var(--accent2)) !important;
     color: #0a0a0a !important;
@@ -203,133 +121,36 @@ html, body, [class*="css"] {
     font-family: 'DM Sans', sans-serif !important;
     font-weight: 500 !important;
     letter-spacing: 0.08em !important;
-    padding: 0.6rem 1.8rem !important;
-    transition: opacity 0.2s, transform 0.2s !important;
-    width: 100%;
 }
-.stButton > button:hover {
-    opacity: 0.88 !important;
-    transform: translateY(-1px) !important;
-}
-
-/* ── Sliders & selects ── */
-[data-testid="stSlider"] > div > div > div {
-    background: var(--accent) !important;
-}
-.stSelectbox label, .stSlider label, .stFileUploader label {
-    color: var(--text) !important;
-    font-size: 0.8rem !important;
-    letter-spacing: 0.1em !important;
-}
-
-/* ── Progress bar ── */
-.stProgress > div > div > div {
-    background: linear-gradient(90deg, var(--accent), var(--accent2)) !important;
-}
-
-/* ── Divider ── */
-hr { border-color: var(--border) !important; }
-
-/* ── Metric ── */
-[data-testid="stMetric"] {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1rem;
-}
-[data-testid="stMetricValue"] {
-    font-family: 'Playfair Display', serif !important;
-    color: var(--accent) !important;
-}
-
-/* ── File uploader ── */
-[data-testid="stFileUploader"] {
-    background: var(--surface2);
-    border: 1.5px dashed var(--border);
-    border-radius: 12px;
-    padding: 1rem;
-}
-
-/* ── Info / warning boxes ── */
-.stAlert { border-radius: 10px !important; }
-
-/* ── Tabs ── */
-.stTabs [data-baseweb="tab"] {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.8rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-}
-.stTabs [aria-selected="true"] {
-    border-bottom-color: var(--accent) !important;
-    color: var(--accent) !important;
-}
-
-/* ── Toast / spinner ── */
-.stSpinner > div { border-top-color: var(--accent) !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-#  CONSTANTS & PATHS  (edit these for your setup)
+#  CONSTANTS
 # ─────────────────────────────────────────────
-if "IMAGE_DIR" not in st.session_state:
-    st.session_state.IMAGE_DIR = "images"
-if "PKL_FEATURES_DIR" not in st.session_state:
-    st.session_state.PKL_FEATURES_DIR = "data"
-if "PKL_FILENAMES" not in st.session_state:
-    st.session_state.PKL_FILENAMES = os.path.join(st.session_state.PKL_FEATURES_DIR, "filenames.pkl")
-
-# Drive Configuration (Optional from env or secrets)
-DRIVE_ID = os.getenv("DRIVE_ID") # Set this in Streamlit Secrets for cloud deployment
+DATA_DIR = "data"
+IMAGE_DIR = "images"
+FEATURES_PATH = os.path.join(DATA_DIR, "features.pkl")
+FILENAMES_PATH = os.path.join(DATA_DIR, "filenames.pkl")
 
 # ─────────────────────────────────────────────
-#  CACHED MODEL & DATA LOADERS
+#  LOADERS
 # ─────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
 def load_model():
     base = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
     base.trainable = False
-    m = tf.keras.models.Sequential([base, GlobalMaxPool2D()])
-    return m
-
-@st.cache_data(show_spinner=True)
-def download_data(drive_id):
-    """Download and unzip data from Drive if missing."""
-    if not os.path.exists("data") or not os.path.exists("images"):
-        url = f'https://drive.google.com/uc?id={drive_id}'
-        try:
-            output = "data_assets.zip"
-            gdown.download(url, output, quiet=False)
-            with zipfile.ZipFile(output, 'r') as zip_ref:
-                zip_ref.extractall(".")
-            os.remove(output)
-            st.rerun()
-        except Exception as e:
-            st.error(f"Failed to download from Drive: {e}. Check link permissions.")
-            return False
-    return True
+    model = tf.keras.models.Sequential([base, GlobalMaxPool2D()])
+    return model
 
 @st.cache_resource(show_spinner=False)
-def load_data(pkl_features_dir, pkl_filenames_path):
-    # Load and concatenate chunks
-    features = []
-    chunk_idx = 1
-    while True:
-        chunk_path = os.path.join(pkl_features_dir, f'Features_chunk_{chunk_idx}.pkl')
-        if not os.path.exists(chunk_path):
-            break
-        with open(chunk_path, 'rb') as f:
-            chunk = pkl.load(f)
-            features.extend(chunk)
-        chunk_idx += 1
-    
-    if len(features) == 0:
+def load_data():
+    if not os.path.exists(FEATURES_PATH) or not os.path.exists(FILENAMES_PATH):
         return None, None
-
-    with open(pkl_filenames_path, 'rb') as f:
+    with open(FEATURES_PATH, 'rb') as f:
+        features = pkl.load(f)
+    with open(FILENAMES_PATH, 'rb') as f:
         filenames = pkl.load(f)
-        
     return np.array(features), filenames
 
 @st.cache_resource(show_spinner=False)
@@ -338,247 +159,94 @@ def load_knn(_features, n_neighbors):
     knn.fit(_features)
     return knn
 
-# ─────────────────────────────────────────────
-#  FEATURE EXTRACTION
-# ─────────────────────────────────────────────
 def extract_features(img_input, model):
-    """Accept PIL Image or file path, return normalised feature vector."""
     if isinstance(img_input, str):
         img = keras_image.load_img(img_input, target_size=(224, 224))
     else:
         img = img_input.convert("RGB").resize((224, 224))
-
     arr = keras_image.img_to_array(img)
     arr = np.expand_dims(arr, axis=0)
     arr = preprocess_input(arr)
     feat = model.predict(arr, verbose=0).flatten()
     return feat / norm(feat)
 
-# ─────────────────────────────────────────────
-#  SIMILARITY SCORE HELPER
-# ─────────────────────────────────────────────
 def dist_to_score(dist):
     return max(0, round((1 - dist / 2) * 100, 1))
 
 # ─────────────────────────────────────────────
-#  HERO HEADER
+#  UI
 # ─────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-    <div class="hero-logo">FashionLens</div>
+    <div class="hero-logo">FashionLens Lite</div>
     <div class="hero-sub">AI-Powered Visual Style Finder</div>
-    <hr class="hero-rule">
 </div>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-#  SIDEBAR
-# ─────────────────────────────────────────────
 with st.sidebar:
     st.markdown('<span class="section-label">⚙ Configuration</span>', unsafe_allow_html=True)
-
-    n_results = st.slider("Number of Recommendations", 1, 10, 5)
-    show_scores = st.toggle("Show Similarity Scores", value=True)
-    show_filenames = st.toggle("Show Filenames", value=False)
-
+    n_results = st.slider("Recommendations", 1, 10, 5)
+    show_scores = st.toggle("Show Similarity %", value=True)
+    
     st.markdown("---")
-    st.markdown('<span class="section-label">ℹ About</span>', unsafe_allow_html=True)
-    st.caption(
-        "FashionLens uses **ResNet50** to extract 2048-dim visual embeddings, "
-        "then **K-Nearest Neighbours** (Euclidean) to retrieve the most visually "
-        "similar items from your wardrobe catalog."
-    )
+    st.caption("Demo version with 2,000 items. Uses ResNet50 + KNN.")
 
-# ─────────────────────────────────────────────
-#  CHECK FILES EXIST & DRIVE SUPPORT
-# ─────────────────────────────────────────────
-# Auto-download from Drive if ID is provided and data is missing
-if DRIVE_ID and (not os.path.exists("data") or not os.path.exists("images")):
-    if download_data(DRIVE_ID):
-        st.success("Data downloaded successfully.")
+# Load Resources
+model = load_model()
+features, filenames = load_data()
 
-features_chunk_1 = os.path.join(st.session_state.PKL_FEATURES_DIR, 'Features_chunk_1.pkl')
-files_ok = os.path.exists(features_chunk_1) and os.path.exists(st.session_state.PKL_FILENAMES)
-
-if not files_ok:
-    st.warning("⚠️ Assets missing locally. No Drive link provided in secrets.")
+if features is None:
+    st.error("Catalog data missing. Please check the 'data' folder.")
     st.stop()
 
-# ─────────────────────────────────────────────
-#  LOAD RESOURCES
-# ─────────────────────────────────────────────
-with st.spinner("Loading ResNet50 model…"):
-    model = load_model()
+knn_model = load_knn(features, n_results)
 
-with st.spinner("Loading feature index…"):
-    features, filenames = load_data(st.session_state.PKL_FEATURES_DIR, st.session_state.PKL_FILENAMES)
-    knn_model = load_knn(features, n_results)
-
-# ─────────────────────────────────────────────
-#  STATS BAR
-# ─────────────────────────────────────────────
 st.markdown(f"""
 <div class="stats-bar">
-    <div class="stat-item">
-        <div class="stat-value">{len(filenames):,}</div>
-        <div class="stat-label">Items Indexed</div>
-    </div>
-    <div class="stat-item">
-        <div class="stat-value">{features.shape[1]:,}</div>
-        <div class="stat-label">Feature Dims</div>
-    </div>
-    <div class="stat-item">
-        <div class="stat-value">ResNet50</div>
-        <div class="stat-label">Backbone</div>
-    </div>
-    <div class="stat-item">
-        <div class="stat-value">KNN</div>
-        <div class="stat-label">Retrieval</div>
-    </div>
+    <div class="stat-item"><div class="stat-value">{len(filenames):,}</div><div class="stat-label">Items</div></div>
+    <div class="stat-item"><div class="stat-value">ResNet50</div><div class="stat-label">Model</div></div>
+    <div class="stat-item"><div class="stat-value">Lite</div><div class="stat-label">Edition</div></div>
 </div>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-#  MAIN TABS
-# ─────────────────────────────────────────────
-tab1, tab2 = st.tabs(["🔍  Find Similar Items", "🗂  Browse Catalog"])
+tab1, tab2 = st.tabs(["🔍 Find", "🗂 Browse"])
 
-# ══════════════════════════════════════════════
-#  TAB 1 — RECOMMENDER
-# ══════════════════════════════════════════════
 with tab1:
-    left_col, right_col = st.columns([1, 2], gap="large")
-
-    # ── LEFT: Input ──────────────────────────
-    with left_col:
-        st.markdown('<span class="section-label">Upload or Select</span>', unsafe_allow_html=True)
-
-        input_mode = st.radio(
-            "Image source",
-            ["Upload your image", "Pick from catalog"],
-            horizontal=True,
-            label_visibility="collapsed",
-        )
-
-        query_img = None
-        query_label = ""
-
-        if input_mode == "Upload your image":
-            uploaded = st.file_uploader(
-                "Drop a fashion image here",
-                type=["jpg", "jpeg", "png", "webp"],
-                label_visibility="collapsed",
-            )
-            if uploaded:
-                query_img   = Image.open(uploaded)
-                query_label = uploaded.name
-
-        else:  # Pick from catalog
-            if len(filenames) > 0:
-                sample_idx = st.number_input(
-                    f"Image index (0 – {len(filenames)-1})",
-                    min_value=0, max_value=len(filenames)-1,
-                    value=0, step=1,
-                )
-                query_img   = Image.open(filenames[sample_idx])
-                query_label = os.path.basename(filenames[sample_idx])
-            else:
-                st.error("No images found in catalog.")
-
-        if query_img:
-            st.markdown("---")
-            st.markdown('<span class="section-label">Query Image</span>', unsafe_allow_html=True)
-            st.image(query_img, use_column_width=True, caption=query_label)
-
-            if st.button("✦  Find Similar Styles"):
-                st.session_state.find_button_clicked = True
-            else:
-                st.session_state.find_button_clicked = False
-
-    # ── RIGHT: Results ───────────────────────
-    with right_col:
-        st.markdown('<span class="section-label">Similar Items</span>', unsafe_allow_html=True)
-
-        if query_img and st.session_state.get('find_button_clicked', False):
-            with st.spinner("Extracting visual features…"):
-                t0       = time.time()
-                q_feat   = extract_features(query_img, model)
+    uploaded = st.file_uploader("Upload fashion image", type=["jpg", "jpeg", "png", "webp"])
+    if uploaded:
+        query_img = Image.open(uploaded)
+        st.image(query_img, width=200, caption="Your Upload")
+        
+        if st.button("Find Similar Styles"):
+            with st.spinner("Analyzing style..."):
+                q_feat = extract_features(query_img, model)
                 distances, indices = knn_model.kneighbors([q_feat])
-                elapsed  = time.time() - t0
+            
+            rec_indices = indices[0][1:]
+            rec_distances = distances[0][1:]
+            
+            cols = st.columns(len(rec_indices))
+            for i, col in enumerate(cols):
+                idx = rec_indices[i]
+                dist = rec_distances[i]
+                fpath = filenames[idx]
+                with col:
+                    if os.path.exists(fpath):
+                        st.image(Image.open(fpath), use_column_width=True)
+                        if show_scores:
+                            st.caption(f"Match: {dist_to_score(dist)}%")
+                    else:
+                        st.warning("Missing")
 
-            # Skip index 0 (query itself if from catalog) or keep all if uploaded
-            rec_indices   = indices[0][1:n_results+1]
-            rec_distances = distances[0][1:n_results+1]
-
-            st.caption(f"⚡ Retrieved in {elapsed:.2f}s")
-
-            # ── Grid of results
-            cols_per_row = min(n_results, 5)
-            rows = (n_results + cols_per_row - 1) // cols_per_row
-
-            result_ptr = 0
-            for row in range(rows):
-                grid_cols = st.columns(cols_per_row)
-                for col_i, col in enumerate(grid_cols):
-                    if result_ptr >= len(rec_indices):
-                        break
-                    idx  = rec_indices[result_ptr]
-                    dist = rec_distances[result_ptr]
-                    score = dist_to_score(dist)
-                    fpath = filenames[idx]
-
-                    with col:
-                        try:
-                            rec_img = Image.open(fpath)
-                            st.image(rec_img, use_column_width=True)
-
-                            meta = f"**#{result_ptr + 1}**"
-                            if show_scores:
-                                meta += f"  ·  `{score}%`"
-                            st.markdown(meta)
-
-                            if show_filenames:
-                                st.caption(os.path.basename(fpath))
-                        except Exception:
-                            st.warning(f"Could not load {fpath}")
-
-                    result_ptr += 1
-
-        elif query_img:
-            st.info("👈  Click **Find Similar Styles** to run the recommendation.")
-        else:
-            st.markdown("""
-            <div style='text-align:center; color:#444; padding: 5rem 0;'>
-                <div style='font-size:3rem;'>👗</div>
-                <div style='font-family: Playfair Display, serif; font-size:1.2rem; color:#555; margin-top:1rem;'>
-                    Upload an image to discover similar styles
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-# ══════════════════════════════════════════════
-#  TAB 2 — BROWSE CATALOG
-# ══════════════════════════════════════════════
 with tab2:
-    st.markdown('<span class="section-label">Catalog Browser</span>', unsafe_allow_html=True)
-
-    page_size = st.select_slider("Items per page", options=[12, 24, 48, 96], value=24)
-    total_pages = max(1, (len(filenames) + page_size - 1) // page_size)
-    page_num = st.number_input("Page", min_value=1, max_value=total_pages, value=1) - 1
-
-    start = page_num * page_size
-    end   = min(start + page_size, len(filenames))
-    page_files = filenames[start:end]
-
-    st.caption(f"Showing items {start+1}–{end} of {len(filenames):,}")
-
-    grid_cols = st.columns(6)
-    for i, fpath in enumerate(page_files):
-        with grid_cols[i % 6]:
-            try:
-                img = Image.open(fpath)
-                st.image(img, use_column_width=True)
-                if show_filenames:
-                    st.caption(os.path.basename(fpath))
-            except Exception:
-                st.warning("?")
+    page = st.number_input("Page", min_value=1, value=1)
+    page_size = 18
+    start = (page-1)*page_size
+    end = start + page_size
+    files = filenames[start:end]
+    
+    grid = st.columns(6)
+    for i, fpath in enumerate(files):
+        with grid[i % 6]:
+            if os.path.exists(fpath):
+                st.image(Image.open(fpath), use_column_width=True)
