@@ -1,10 +1,10 @@
 # Fashion Product Recommendation System
 
-An AI-powered fashion product recommendation system built with deep learning and similarity-based matching using ResNet50 and k-Nearest Neighbors.
+A deep learning–based fashion product recommendation system using ResNet50 feature extraction and k-Nearest Neighbors similarity search.
 
 ## Features
 
-- 👗 **AI-Powered Recommendations**: Uses ResNet50 CNN to extract image features
+- 👗 **Deep Learning–Powered Recommendations**: Uses ResNet50 CNN to extract image features
 - 🔍 **Semantic Search**: Find similar fashion products based on image similarity
 - 🎨 **Modern UI**: Built with Streamlit for an elegant, user-friendly interface
 - ⚡ **Fast Processing**: Efficient feature extraction and similarity matching
