@@ -45,5 +45,11 @@ Thumbs.db
 .env
 .env.local
 
+# Large Data (Moved to Drive/External)
+Images_features.pkl
+filenames.pkl
+data/
+images/
+
 # Streamlit
 .streamlit/

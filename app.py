@@ -11,6 +11,8 @@ from PIL import Image
 import os
 import io
 import time
+import zipfile
+import gdown
 
 # ─────────────────────────────────────────────
 #  PAGE CONFIG
@@ -273,10 +275,13 @@ hr { border-color: var(--border) !important; }
 # ─────────────────────────────────────────────
 if "IMAGE_DIR" not in st.session_state:
     st.session_state.IMAGE_DIR = "images"
-if "PKL_FEATURES" not in st.session_state:
-    st.session_state.PKL_FEATURES = "Images_features.pkl"
+if "PKL_FEATURES_DIR" not in st.session_state:
+    st.session_state.PKL_FEATURES_DIR = "data"
 if "PKL_FILENAMES" not in st.session_state:
-    st.session_state.PKL_FILENAMES = "filenames.pkl"
+    st.session_state.PKL_FILENAMES = os.path.join(st.session_state.PKL_FEATURES_DIR, "filenames.pkl")
+
+# Drive Configuration (Optional from env or secrets)
+DRIVE_ID = os.getenv("DRIVE_ID") # Set this in Streamlit Secrets for cloud deployment
 
 # ─────────────────────────────────────────────
 #  CACHED MODEL & DATA LOADERS
@@ -288,10 +293,43 @@ def load_model():
     m = tf.keras.models.Sequential([base, GlobalMaxPool2D()])
     return m
 
+@st.cache_data(show_spinner=True)
+def download_data(drive_id):
+    """Download and unzip data from Drive if missing."""
+    if not os.path.exists("data") or not os.path.exists("images"):
+        url = f'https://drive.google.com/uc?id={drive_id}'
+        try:
+            output = "data_assets.zip"
+            gdown.download(url, output, quiet=False)
+            with zipfile.ZipFile(output, 'r') as zip_ref:
+                zip_ref.extractall(".")
+            os.remove(output)
+            st.rerun()
+        except Exception as e:
+            st.error(f"Failed to download from Drive: {e}. Check link permissions.")
+            return False
+    return True
+
 @st.cache_resource(show_spinner=False)
-def load_data(pkl_features_path, pkl_filenames_path):
-    features  = pkl.load(open(pkl_features_path,  'rb'))
-    filenames = pkl.load(open(pkl_filenames_path, 'rb'))
+def load_data(pkl_features_dir, pkl_filenames_path):
+    # Load and concatenate chunks
+    features = []
+    chunk_idx = 1
+    while True:
+        chunk_path = os.path.join(pkl_features_dir, f'Features_chunk_{chunk_idx}.pkl')
+        if not os.path.exists(chunk_path):
+            break
+        with open(chunk_path, 'rb') as f:
+            chunk = pkl.load(f)
+            features.extend(chunk)
+        chunk_idx += 1
+    
+    if len(features) == 0:
+        return None, None
+
+    with open(pkl_filenames_path, 'rb') as f:
+        filenames = pkl.load(f)
+        
     return np.array(features), filenames
 
 @st.cache_resource(show_spinner=False)
@@ -352,15 +390,18 @@ with st.sidebar:
     )
 
 # ─────────────────────────────────────────────
-#  CHECK FILES EXIST
+#  CHECK FILES EXIST & DRIVE SUPPORT
 # ─────────────────────────────────────────────
-files_ok = os.path.exists(st.session_state.PKL_FEATURES) and os.path.exists(st.session_state.PKL_FILENAMES)
+# Auto-download from Drive if ID is provided and data is missing
+if DRIVE_ID and (not os.path.exists("data") or not os.path.exists("images")):
+    if download_data(DRIVE_ID):
+        st.success("Data downloaded successfully.")
+
+features_chunk_1 = os.path.join(st.session_state.PKL_FEATURES_DIR, 'Features_chunk_1.pkl')
+files_ok = os.path.exists(features_chunk_1) and os.path.exists(st.session_state.PKL_FILENAMES)
 
 if not files_ok:
-    st.warning(
-        f"⚠️  Pre-computed feature files not found at **{st.session_state.PKL_FEATURES}** / **{st.session_state.PKL_FILENAMES}**.  \n"
-        "Please run the Colab notebook first to generate them, then place them in the same directory as `app.py`."
-    )
+    st.warning("⚠️ Assets missing locally. No Drive link provided in secrets.")
     st.stop()
 
 # ─────────────────────────────────────────────
@@ -370,7 +411,7 @@ with st.spinner("Loading ResNet50 model…"):
     model = load_model()
 
 with st.spinner("Loading feature index…"):
-    features, filenames = load_data(st.session_state.PKL_FEATURES, st.session_state.PKL_FILENAMES)
+    features, filenames = load_data(st.session_state.PKL_FEATURES_DIR, st.session_state.PKL_FILENAMES)
     knn_model = load_knn(features, n_results)
 
 # ─────────────────────────────────────────────
