@@ -129,7 +129,7 @@ html, body, [class*="css"] {
 #  CONSTANTS
 # ─────────────────────────────────────────────
 DATA_DIR = "data"
-IMAGE_DIR = "images"
+IMAGE_DIR = "catalog"
 FEATURES_PATH = os.path.join(DATA_DIR, "features.pkl")
 FILENAMES_PATH = os.path.join(DATA_DIR, "filenames.pkl")
 
