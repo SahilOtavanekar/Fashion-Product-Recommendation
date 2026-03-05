@@ -1,54 +1,21 @@
-# Virtual Environment
+# Lite Streamlit Gitignore
+
+# Python
+__pycache__/
+*.pyc
 .venv/
 venv/
 env/
-ENV/
-
-# Python caching
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Jupyter
-.ipynb_checkpoints/
-*.ipynb_checkpoints
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Large Feature Backup
+# Large binaries we don't want (Original full models)
 Images_features.pkl
+filenames.pkl
+data_assets.zip
 
-# Keep the Lite Version Data
-# We want these in Git for a fast demo deployment
-!data/features.pkl
-!data/filenames.pkl
-!images/*.jpg
-
-# Streamlit config
-.streamlit/
+# We WANT catalog and data
+# No ignore for catalog/
+# No ignore for data/
