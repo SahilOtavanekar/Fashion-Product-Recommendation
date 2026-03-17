@@ -30,14 +30,12 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
 :root {
-    --bg:          #ffffff;
-    --surface:     #f8fafc;
-    --surface-alt: #f1f5f9;
+    --surface:     rgba(128, 128, 128, 0.05); /* Adaptive surface */
+    --surface-alt: rgba(128, 128, 128, 0.1);  /* Adaptive alternate surface */
     --accent:      #6366f1; /* Modern Indigo */
-    --accent-glow: rgba(99, 102, 241, 0.1);
-    --text-main:   #0f172a; /* Deep Slate */
-    --text-muted:  #64748b;
-    --border:      #e2e8f0;
+    --accent-glow: rgba(99, 102, 241, 0.15);
+    --text-muted:  rgba(150, 150, 150, 0.9);  /* Adaptive muted text */
+    --border:      rgba(128, 128, 128, 0.2);  /* Adaptive border */
     --success:     #10b981;
 }
 
@@ -46,27 +44,19 @@ st.markdown("""
 /* Base resets */
 html, body, [class*="css"] {
     font-family: 'Inter', sans-serif;
-    color: var(--text-main);
 }
 
-.stApp { background-color: var(--bg); }
 #MainMenu, footer { visibility: hidden; }
 .block-container { padding: 3rem 4rem; max-width: 1400px; }
 
 /* Sidebar Styling */
 [data-testid="stSidebar"] {
-    background-color: var(--surface) !important;
     border-right: 1px solid var(--border) !important;
 }
 
 [data-testid="stSidebar"] .stMarkdown p {
     color: var(--text-muted) !important;
     font-size: 0.9rem;
-}
-
-/* Sidebar Toggle Contrast */
-button[data-testid="stSidebarCollapse"] {
-    color: var(--text-main) !important;
 }
 
 
@@ -79,7 +69,6 @@ button[data-testid="stSidebarCollapse"] {
     font-family: 'Outfit', sans-serif;
     font-size: 2.8rem;
     font-weight: 700;
-    color: var(--text-main);
     margin-bottom: 0.2rem;
     letter-spacing: -0.02em;
 }
@@ -203,13 +192,13 @@ button[data-testid="stSidebarCollapse"] {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; border: 2px solid var(--bg); }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(128, 128, 128, 0.4); border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--accent); }
 
 /* Sidebar specific scrollbar */
 [data-testid="stSidebar"] ::-webkit-scrollbar-thumb {
-    background: #64748b;
+    background: rgba(128, 128, 128, 0.4); border-radius: 10px; border: 2px solid transparent; background-clip: content-box;
 }
 
 </style>
@@ -367,7 +356,7 @@ with tab1:
         
         if 'results' in st.session_state:
             rec_indices, rec_distances = st.session_state['results']
-            st.markdown('<h3 style="margin-top:2rem; color:var(--text-main);">Visual Match Analysis</h3>', unsafe_allow_html=True)
+            st.markdown('<h3 style="margin-top:2rem;">Visual Match Analysis</h3>', unsafe_allow_html=True)
 
             
             # High-density 6-column grid for smaller results
